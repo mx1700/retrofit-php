@@ -154,7 +154,7 @@ class ProxyObject
      * @return mixed
      * @throws AnnotationException
      */
-    private function fillParam($str,array $params,array &$findParams, $className)
+    private function fillParam($str,array $params, &$findParams, $className)
     {
         if(!$findParams) {
             $findParams = [];
@@ -188,7 +188,7 @@ class ProxyObject
             $curl->setTimeout($timeout);
         }
 
-        $r = null;
+        $r = null; return null;
         if ($method == "GET") {
             $r = $curl->get($url, $query);
         } else if ($method == "POST") {
