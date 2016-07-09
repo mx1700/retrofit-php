@@ -1,7 +1,9 @@
 <?php
 namespace Retrofit;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\CachedReader;
+use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\PhpFileCache;
 use ProxyManager\FileLocator\FileLocator;
 use ProxyManager\GeneratorStrategy\FileWriterGeneratorStrategy;
@@ -28,19 +30,37 @@ class ServiceFactory
 
     public function __construct($option = [])
     {
-        $cacheDir = __DIR__ . '/../cache';
-        $config = new \ProxyManager\Configuration();
-        $config->setProxiesTargetDir($cacheDir);
-        $config->setGeneratorStrategy(new FileWriterGeneratorStrategy(new FileLocator($cacheDir)));
-        spl_autoload_register($config->getProxyAutoloader());
+        $cacheDir = isset($option['cacheDir']) ? $option['cacheDir'] : false;
+        $debug = isset($option['debug']) ? $option['debug'] : false;
+        unset($option['cacheDir']);
+        unset($option['debug']);
 
-        $this->proxyFactory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory($config);
+        AnnotationRegistry::registerAutoloadNamespace('Retrofit');
 
-        $this->annotationReader = new CachedReader(
-            new AnnotationReader(),
-            new PhpFileCache($cacheDir),
-            $debug = true   //会自动更新缓存
-        );
+        if ($cacheDir && !$debug) {
+            $config = new \ProxyManager\Configuration();
+            $config->setProxiesTargetDir($cacheDir);
+            $config->setGeneratorStrategy(new FileWriterGeneratorStrategy(new FileLocator($cacheDir)));
+            spl_autoload_register($config->getProxyAutoloader());
+            $this->proxyFactory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory($config);
+
+            $this->annotationReader = new CachedReader(
+                new AnnotationReader(),
+                new PhpFileCache($cacheDir),
+                $debug
+            );
+        } else {
+            $this->proxyFactory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory();
+            $this->annotationReader = new CachedReader(
+                new AnnotationReader(),
+                new ArrayCache(),
+                $debug
+            );
+        }
+
+
+
+
 
         $this->option = $option;
     }

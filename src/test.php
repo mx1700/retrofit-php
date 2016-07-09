@@ -10,7 +10,6 @@ use Retrofit\Annotations\Body;
 use Retrofit\Annotations\Timeout;
 
 $loader = require '../vendor/autoload.php';
-AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
 
 
 //$bench = new \Ubench;

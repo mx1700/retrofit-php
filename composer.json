@@ -14,7 +14,7 @@
     },
     "autoload":{
         "psr-4":{
-            "Retrofit\\":["./src"]
+            "Retrofit\\":["./src/Retrofit"]
         }
     },
     "require-dev": {

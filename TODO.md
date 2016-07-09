@@ -1,8 +1,9 @@
  - Multipart 支持
- - Body 参数支持
+ - Body 参数支持        ok
  - Headers 参数支持  @Headers("Cache-Control: max-age=640000")         ok
  - 参数化 Headers    @Header("Authorization") String authorization     ok
  - baseUrl          ok
  - Converter
  - cookie 支持
  - proxy 类缓存
+ - timeout          ok
