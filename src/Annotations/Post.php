@@ -3,7 +3,7 @@
  * Created by PhpStorm.
  * User: lizhaoguang
  * Date: 16/7/9
- * Time: 下午6:31
+ * Time: 上午11:07
  */
 
 namespace Retrofit\Annotations;
@@ -14,17 +14,17 @@ namespace Retrofit\Annotations;
  * @Annotation
  * @Target({"METHOD"})
  */
-class Body
+class Post
 {
     /**
-     * @var string|array<string>
+     * @var string
      */
-    public $params;
+    public $url;
 
     static function __set_state($values)
     {
-        $r = new self();
-        $r->map = $values['map'];
+        $r = new Get();
+        $r->url = $values['url'];
         return $r;
     }
 }

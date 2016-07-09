@@ -1,8 +1,10 @@
 <?php
 namespace Retrofit;
+use Retrofit\Annotations\Body;
 use Retrofit\Annotations\Get;
 use \Curl\Curl;
 use Retrofit\Annotations\Headers;
+use Retrofit\Annotations\Post;
 use Retrofit\Annotations\QueryMap;
 use \Doctrine\Common\Annotations\Reader;
 use Zend\Code\Exception\BadMethodCallException;
@@ -21,7 +23,11 @@ class ProxyObject
     private $annotationsReader;
 
     private $baseUrl;
-    static private $options = ['baseUrl'];
+    private $headers = [];
+    private $query = [];
+    private $body = [];
+    static private $options = ['baseUrl', 'headers', 'query', 'body'];
+
 
     public function __construct($className, Reader $annotationsReader, array $option = [])
     {
@@ -41,11 +47,16 @@ class ProxyObject
         $method = 'GET';
         $url = '';
         $params = array_combine($paramNames, $arguments);
-        $headers = [];
+        $query = $this->query;
+        $body = $this->body;
+        $headers = $this->headers;
 
         foreach($annotations as $annotation) {
             if ($annotation instanceof Get) {
                 $method = 'GET';
+                $url = $annotation->url;
+            } else if ($annotation instanceof Post) {
+                $method = 'POST';
                 $url = $annotation->url;
             } else if ($annotation instanceof QueryMap) {
                 foreach($annotation->params as $param) {
@@ -54,24 +65,30 @@ class ProxyObject
                     $params = array_merge($params, $map);
                 }
             } else if ($annotation instanceof Headers) {
-                $headers = $annotation->headers;
-                foreach($headers as $key => $val) {
-                    $headers[$key] = $this->fillParam($val, $params, $findParam);
+                $headers = array_merge($headers, $annotation->headers);
+            } else if ($annotation instanceof Body) {
+                foreach($annotation->params as $param) {
+                    $body[$param] = $params[$param];    //TODO:判断是否存在属性
+                    unset($params[$param]);
                 }
             }
         }
 
-        //TODO:检查 curl 相关参数[get post put delete]等是否都存在
         $url = $this->fillParam($url, $params, $findParam);
+        foreach($headers as $key => $val) {
+            $headers[$key] = $this->fillParam($val, $params, $findParam);
+        }
 
         foreach($findParam as $key => $val) {
             unset($params[$key]);
         }
+        $query = array_merge($query, $params);
 
         if ($this->baseUrl) {
             $url = $this->baseUrl . $url;
         }
-        return $this->callApi($url, $method, $params, $headers);
+
+        return $this->callApi($url, $method, $query, $body, $headers);
     }
 
     /**
@@ -100,23 +117,39 @@ class ProxyObject
         return $str;
     }
 
-    private function callApi($url, $method, array $query, array $headers)
+    private function callApi($url, $method, array $query, array $body, array $headers)
     {
-        var_dump($url, $method, $query, $headers);
+        var_dump($url, $method, $query, $body, $headers);
         $curl = new Curl();
         $curl->setOpt(CURLOPT_FOLLOWLOCATION, true);    //自动跳转
+        //$curl->setOpt(CURLOPT_SSL_VERIFYPEER, false);
 
         foreach($headers as $key => $val) {
             $curl->setHeader($key, $val);
         }
 
+        $r = null;
         if ($method == "GET") {
-            return $curl->get($url, $query);
+            $r = $curl->get($url, $query);
         } else if ($method == "POST") {
-            return $curl->post($url, $query);
+            if (!empty($query)) {
+                $url = strpos($url, '?') > 0 ? $url.'&'.http_build_query($query) : $url.'?'.http_build_query($query);
+            }
+            var_dump("POST!!!!", $url, $body);
+            $r = $curl->post($url, $body);
         }
+        $curl->close();
+//        if ($curl->error) {
+//            echo 'Error: ' . $curl->errorCode . ': ' . $curl->errorMessage;
+//        }
+//        else {
+//            echo $curl->response;
+//        }
+//
+//        var_dump($curl->requestHeaders);
+//        var_dump($curl->responseHeaders);
 
-        return null;
+        return $r;
     }
 
     private function setOption($option) {
