@@ -3,6 +3,8 @@ namespace Retrofit;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\PhpFileCache;
+use ProxyManager\FileLocator\FileLocator;
+use ProxyManager\GeneratorStrategy\FileWriterGeneratorStrategy;
 
 /**
  * Created by PhpStorm.
@@ -26,15 +28,17 @@ class ServiceFactory
 
     public function __construct($option = [])
     {
+        $cacheDir = __DIR__ . '/../cache';
         $config = new \ProxyManager\Configuration();
-        $config->setProxiesTargetDir(__DIR__ . '/../cache/proxy/');
+        $config->setProxiesTargetDir($cacheDir);
+        $config->setGeneratorStrategy(new FileWriterGeneratorStrategy(new FileLocator($cacheDir)));
         spl_autoload_register($config->getProxyAutoloader());
 
         $this->proxyFactory = new \ProxyManager\Factory\LazyLoadingValueHolderFactory($config);
 
         $this->annotationReader = new CachedReader(
             new AnnotationReader(),
-            new PhpFileCache('../cache'),
+            new PhpFileCache($cacheDir),
             $debug = true   //会自动更新缓存
         );
 
