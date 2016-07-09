@@ -17,14 +17,14 @@ namespace Retrofit\Annotations;
 class Body
 {
     /**
-     * @var string|array<string>
+     * @var array<string>
      */
     public $params;
 
     static function __set_state($values)
     {
         $r = new self();
-        $r->map = $values['map'];
+        $r->params = $values['params'];
         return $r;
     }
 }
