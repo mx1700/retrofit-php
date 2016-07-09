@@ -22,7 +22,9 @@ class ServiceFactory
      */
     private $annotationReader;
 
-    public function __construct()
+    private $option;
+
+    public function __construct($option = [])
     {
         $config = new \ProxyManager\Configuration();
         $config->setProxiesTargetDir(__DIR__ . '/../cache/proxy/');
@@ -36,6 +38,7 @@ class ServiceFactory
             $debug = true   //会自动更新缓存
         );
 
+        $this->option = $option;
     }
 
     /**
@@ -45,10 +48,11 @@ class ServiceFactory
     public function create($className)
     {
         $reader = $this->annotationReader;
+        $option = $this->option;
         return $this->proxyFactory->createProxy(
             $className,
-            function (& $wrappedObject, $proxy, $method, $parameters, & $initializer) use($className, $reader) {
-                $wrappedObject = new ProxyObject($className, $reader);
+            function (& $wrappedObject, $proxy, $method, $parameters, & $initializer) use($className, $reader, $option) {
+                $wrappedObject = new ProxyObject($className, $reader, $option);
                 $initializer   = null;
             }
         );

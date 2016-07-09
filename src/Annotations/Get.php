@@ -16,7 +16,9 @@ namespace Retrofit\Annotations;
  */
 class Get
 {
-    /** @var string */
+    /**
+     * @var string
+     */
     public $url;
 
     static function __set_state($values)
