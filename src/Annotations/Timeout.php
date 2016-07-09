@@ -14,17 +14,17 @@ namespace Retrofit\Annotations;
  * @Annotation
  * @Target({"METHOD"})
  */
-class Get
+class Timeout
 {
     /**
-     * @var string
+     * @var integer
      */
-    public $url;
+    public $second;
 
     static function __set_state($values)
     {
         $r = new self();
-        $r->url = $values['url'];
+        $r->second = $values['second'];
         return $r;
     }
 }

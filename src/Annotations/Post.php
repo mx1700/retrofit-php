@@ -23,7 +23,7 @@ class Post
 
     static function __set_state($values)
     {
-        $r = new Get();
+        $r = new self();
         $r->url = $values['url'];
         return $r;
     }

@@ -7,7 +7,7 @@ use Retrofit\Annotations\Headers;
 use Retrofit\Annotations\Post;
 use Retrofit\Annotations\QueryMap;
 use \Doctrine\Common\Annotations\Reader;
-use Zend\Code\Exception\BadMethodCallException;
+use Retrofit\Annotations\Timeout;
 use Zend\Code\Exception\InvalidArgumentException;
 
 /**
@@ -26,7 +26,8 @@ class ProxyObject
     private $headers = [];
     private $query = [];
     private $body = [];
-    static private $options = ['baseUrl', 'headers', 'query', 'body'];
+    private $timeout = 0;
+    static private $options = ['baseUrl', 'headers', 'query', 'body', 'timeout'];
 
 
     public function __construct($className, Reader $annotationsReader, array $option = [])
@@ -50,6 +51,7 @@ class ProxyObject
         $query = $this->query;
         $body = $this->body;
         $headers = $this->headers;
+        $timeout = $this->timeout;
 
         foreach($annotations as $annotation) {
             if ($annotation instanceof Get) {
@@ -71,6 +73,8 @@ class ProxyObject
                     $body[$param] = $params[$param];    //TODO:判断是否存在属性
                     unset($params[$param]);
                 }
+            } else if ($annotation instanceof Timeout) {
+                $timeout = $annotation->second;
             }
         }
 
@@ -88,7 +92,7 @@ class ProxyObject
             $url = $this->baseUrl . $url;
         }
 
-        return $this->callApi($url, $method, $query, $body, $headers);
+        return $this->callApi($url, $method, $query, $body, $headers, $timeout);
     }
 
     /**
@@ -117,15 +121,19 @@ class ProxyObject
         return $str;
     }
 
-    private function callApi($url, $method, array $query, array $body, array $headers)
+    private function callApi($url, $method, array $query, array $body, array $headers, $timeout)
     {
-        var_dump($url, $method, $query, $body, $headers);
+        //var_dump($url, $method, $query, $body, $headers);
         $curl = new Curl();
         $curl->setOpt(CURLOPT_FOLLOWLOCATION, true);    //自动跳转
         //$curl->setOpt(CURLOPT_SSL_VERIFYPEER, false);
 
         foreach($headers as $key => $val) {
             $curl->setHeader($key, $val);
+        }
+
+        if ($timeout) {
+            $curl->setTimeout($timeout);
         }
 
         $r = null;
@@ -135,19 +143,17 @@ class ProxyObject
             if (!empty($query)) {
                 $url = strpos($url, '?') > 0 ? $url.'&'.http_build_query($query) : $url.'?'.http_build_query($query);
             }
-            var_dump("POST!!!!", $url, $body);
             $r = $curl->post($url, $body);
         }
         $curl->close();
-//        if ($curl->error) {
-//            echo 'Error: ' . $curl->errorCode . ': ' . $curl->errorMessage;
-//        }
-//        else {
-//            echo $curl->response;
-//        }
-//
-//        var_dump($curl->requestHeaders);
-//        var_dump($curl->responseHeaders);
+        if ($curl->error) {
+            //echo 'Error: ' . $curl->errorCode . ': ' . $curl->errorMessage;
+            if ($curl->errorCode == 404) {
+                return null;
+            } else {
+                throw new \Exception($curl->errorMessage, $curl->errorCode);
+            }
+        }
 
         return $r;
     }
