@@ -1,0 +1,6 @@
+ - Multipart 支持
+ - Body 参数支持
+ - Headers 参数支持  @Headers("Cache-Control: max-age=640000")
+ - 参数化 Headers    @Header("Authorization") String authorization
+ - baseUrl
+ - Converter
