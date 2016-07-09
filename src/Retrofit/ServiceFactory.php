@@ -26,8 +26,15 @@ class ServiceFactory
      */
     private $annotationReader;
 
+    /**
+     * @var array
+     */
     private $option;
 
+    /**
+     * ServiceFactory constructor.
+     * @param array $option
+     */
     public function __construct($option = [])
     {
         $cacheDir = isset($option['cacheDir']) ? $option['cacheDir'] : false;
@@ -57,10 +64,6 @@ class ServiceFactory
                 $debug
             );
         }
-
-
-
-
 
         $this->option = $option;
     }

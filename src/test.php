@@ -40,11 +40,9 @@ interface GithubService
      * @param $name
      * @return mixed
      * @Get("/users/{name}")
-     * @QueryMap("filter")
-     * @Headers({ "name" = "name is {name}" })
-     * @Timeout(100)
+     * @Timeout(10)
      */
-    function getUser($name, $id = 0, array $filter = []);
+    function getUser($name);
 
     /**
      * @param $issues

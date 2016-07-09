@@ -1,5 +1,6 @@
 <?php
 namespace Retrofit;
+use Doctrine\Common\Annotations\AnnotationException;
 use Retrofit\Annotations\Body;
 use Retrofit\Annotations\Get;
 use \Curl\Curl;
@@ -18,15 +19,49 @@ use Zend\Code\Exception\InvalidArgumentException;
  */
 class ProxyObject
 {
+    /**
+     * @var string
+     */
     private $className;
+
+    /**
+     * @var \ReflectionClass
+     */
     private $refClass;
+
+    /**
+     * @var Reader
+     */
     private $annotationsReader;
 
+    /**
+     * @var string
+     */
     private $baseUrl;
+
+    /**
+     * @var array
+     */
     private $headers = [];
+
+    /**
+     * @var array
+     */
     private $query = [];
+
+    /**
+     * @var array
+     */
     private $body = [];
+
+    /**
+     * @var int
+     */
     private $timeout = 0;
+
+    /**
+     * @var array
+     */
     static private $options = ['baseUrl', 'headers', 'query', 'body', 'timeout'];
 
 
@@ -37,6 +72,16 @@ class ProxyObject
         $this->annotationsReader = $annotationsReader;
 
         $this->setOption($option);
+    }
+
+    private function setOption($option) {
+        foreach($option as $key => $val) {
+            if (in_array($key, static::$options)) {
+                $this->$key = $val;
+            } else {
+                throw new InvalidArgumentException("$key 是无效的 options");
+            }
+        }
     }
 
     function __call($name, $arguments)
@@ -62,7 +107,10 @@ class ProxyObject
                 $url = $annotation->url;
             } else if ($annotation instanceof QueryMap) {
                 foreach($annotation->params as $param) {
-                    $map = $params[$param]; //TODO:判断是否存在属性
+                    if (!isset($params[$param])) {
+                        throw new AnnotationException("QueryMap 参数 {{$param}} 未找到");
+                    }
+                    $map = $params[$param];
                     unset($params[$param]);
                     $params = array_merge($params, $map);
                 }
@@ -70,7 +118,10 @@ class ProxyObject
                 $headers = array_merge($headers, $annotation->headers);
             } else if ($annotation instanceof Body) {
                 foreach($annotation->params as $param) {
-                    $body[$param] = $params[$param];    //TODO:判断是否存在属性
+                    if (!isset($params[$param])) {
+                        throw new AnnotationException("Body 参数 {{$param}} 未找到");
+                    }
+                    $body[$param] = $params[$param];
                     unset($params[$param]);
                 }
             } else if ($annotation instanceof Timeout) {
@@ -78,9 +129,9 @@ class ProxyObject
             }
         }
 
-        $url = $this->fillParam($url, $params, $findParam);
+        $url = $this->fillParam($url, $params, $findParam, $method);
         foreach($headers as $key => $val) {
-            $headers[$key] = $this->fillParam($val, $params, $findParam);
+            $headers[$key] = $this->fillParam($val, $params, $findParam, 'Headers.'.$key);
         }
 
         foreach($findParam as $key => $val) {
@@ -92,17 +143,18 @@ class ProxyObject
             $url = $this->baseUrl . $url;
         }
 
-        return $this->callApi($url, $method, $query, $body, $headers, $timeout);
+        return $this->httpCall($url, $method, $query, $body, $headers, $timeout);
     }
 
     /**
      * @param $str
      * @param $params
      * @param $findParams
+     * @param $className
      * @return mixed
-     * @throws \Doctrine\Common\Annotations\AnnotationException
+     * @throws AnnotationException
      */
-    private function fillParam($str, &$params, &$findParams)
+    private function fillParam($str,array $params,array &$findParams, $className)
     {
         if(!$findParams) {
             $findParams = [];
@@ -115,13 +167,13 @@ class ProxyObject
                 $str = str_replace('{' . $pathPar . '}', $val, $str);
                 $findParams[$pathPar] = $params[$pathPar];
             } else {
-                throw new \Doctrine\Common\Annotations\AnnotationException("参数 \{$pathPar\} 未找到");
+                throw new AnnotationException("{$className} 参数 {{$pathPar}} 未找到");
             }
         }
         return $str;
     }
 
-    private function callApi($url, $method, array $query, array $body, array $headers, $timeout)
+    private function httpCall($url, $method, array $query, array $body, array $headers, $timeout)
     {
         //var_dump($url, $method, $query, $body, $headers);
         $curl = new Curl();
@@ -147,7 +199,6 @@ class ProxyObject
         }
         $curl->close();
         if ($curl->error) {
-            //echo 'Error: ' . $curl->errorCode . ': ' . $curl->errorMessage;
             if ($curl->errorCode == 404) {
                 return null;
             } else {
@@ -156,15 +207,5 @@ class ProxyObject
         }
 
         return $r;
-    }
-
-    private function setOption($option) {
-        foreach($option as $key => $val) {
-            if (in_array($key, static::$options)) {
-                $this->$key = $val;
-            } else {
-                throw new InvalidArgumentException("$key 是无效的 options");
-            }
-        }
     }
 }
