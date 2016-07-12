@@ -62,7 +62,17 @@ class ProxyObject
     /**
      * @var array
      */
-    static private $options = ['baseUrl', 'headers', 'query', 'body', 'timeout'];
+
+    /**
+     * @var \Closure
+     */
+    private $beforeRequest;
+    /**
+     * @var \Closure
+     */
+    private $afterRequest;
+
+    static private $options = ['baseUrl', 'headers', 'query', 'body', 'timeout', 'beforeRequest', 'afterRequest'];
 
 
     public function __construct($className, Reader $annotationsReader, array $option = [])
@@ -175,10 +185,15 @@ class ProxyObject
 
     private function httpCall($url, $method, array $query, array $body, array $headers, $timeout)
     {
-        //var_dump($url, $method, $query, $body, $headers);
+        var_dump($url, $method, $query, $body, $headers, $timeout);
+        if ($this->beforeRequest) {
+            $beforeRequest = $this->beforeRequest;
+            $beforeRequest($url, $method, $query, $body, $headers, $timeout);
+        }
+
         $curl = new Curl();
-        $curl->setOpt(CURLOPT_FOLLOWLOCATION, true);    //自动跳转
-        //$curl->setOpt(CURLOPT_SSL_VERIFYPEER, false);
+        $curl->setOpt(CURLOPT_FOLLOWLOCATION, true);
+        $curl->setOpt(CURLOPT_SSL_VERIFYPEER, false); //TODO: 不应该关闭 ssl 验证，但是 windows 版 php 默认不加载根证书，https 会报错
 
         foreach($headers as $key => $val) {
             $curl->setHeader($key, $val);
@@ -188,24 +203,35 @@ class ProxyObject
             $curl->setTimeout($timeout);
         }
 
-        $r = null;
+        $result = null;
+        $exception = null;
         if ($method == "GET") {
-            $r = $curl->get($url, $query);
+            $result = $curl->get($url, $query);
         } else if ($method == "POST") {
             if (!empty($query)) {
                 $url = strpos($url, '?') > 0 ? $url.'&'.http_build_query($query) : $url.'?'.http_build_query($query);
             }
-            $r = $curl->post($url, $body);
+            $result = $curl->post($url, $body);
         }
         $curl->close();
+
         if ($curl->error) {
             if ($curl->errorCode == 404) {
-                return null;
+                $result = null;
             } else {
-                throw new \Exception($curl->errorMessage, $curl->errorCode);
+                $exception = new HttpException($curl->errorMessage, $curl->errorCode);
             }
         }
 
-        return $r;
+        if ($this->afterRequest) {
+            $afterRequest = $this->afterRequest;
+            $afterRequest($result, $exception, $url, $method, $query, $body, $headers, $timeout);
+        }
+
+        if ($exception) {
+            throw $exception;
+        }
+
+        return $result;
     }
 }
