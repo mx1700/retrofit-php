@@ -188,7 +188,7 @@ class ProxyObject
             $curl->setTimeout($timeout);
         }
 
-        $r = null; return null;
+        $r = null;
         if ($method == "GET") {
             $r = $curl->get($url, $query);
         } else if ($method == "POST") {
