@@ -1,7 +1,7 @@
 Retrofit-php
 ========
 
-Retrofit-php 是一个 HTTP client 库，参考了 square/retrofit 的 API ，并使用 php 实现。
+Retrofit-php 是一个 HTTP client 库，参考了 [square/retrofit][retrofit] 的 API ，并使用 php 实现。
 
 
 概述
