@@ -1,5 +1,4 @@
 <?php
-namespace Retrofit;
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Retrofit\Annotations\Get;
@@ -9,21 +8,24 @@ use Retrofit\Annotations\Post;
 use Retrofit\Annotations\Body;
 use Retrofit\Annotations\Timeout;
 
-$loader = require '../vendor/autoload.php';
+require '../vendor/autoload.php';
 
 
 $bench = new \Ubench;
 $bench->start();
 
-$factory = new ServiceFactory([
-    "baseUrl" => "https://api.github.com",
-    //'query' => ['token' => '1111'],
-    //'body' => ['body1' => '111'],
-    'timeout' => 5,
-    'debug' => true,
-    'cacheDir' => dirname(__DIR__) . '/cache'
+$factory = new \Retrofit\ServiceFactory([
+    'baseUrl' => 'https://api.github.com',
+    "beforeRequest" => function(&$url, &$method, &$query, &$body, &$headers, &$timeout) {
+        var_dump($url);
+        $url = "http://baidu.com";
+    },
+    "afterRequest" => function(&$result, &$exception, $url, $method, $query, $body, $headers, $timeout) {
+        //$result->login = '111';
+    }
 ]);
 $proxy = $factory->create(GithubService::class);
+$factory->create(GithubService::class);
 
 $user = $proxy->getUser("mx1700");
 echo json_encode($user);

@@ -185,7 +185,7 @@ class ProxyObject
 
     private function httpCall($url, $method, array $query, array $body, array $headers, $timeout)
     {
-        var_dump($url, $method, $query, $body, $headers, $timeout);
+        //var_dump($url, $method, $query, $body, $headers, $timeout);
         if ($this->beforeRequest) {
             $beforeRequest = $this->beforeRequest;
             $beforeRequest($url, $method, $query, $body, $headers, $timeout);
