@@ -42,7 +42,7 @@ class ServiceFactory
         unset($option['cacheDir']);
         unset($option['debug']);
 
-        AnnotationRegistry::registerAutoloadNamespace('Retrofit');
+        AnnotationRegistry::registerAutoloadNamespace('Retrofit', (dirname(__DIR__)));
 
         if ($cacheDir && !$debug) {
             $config = new \ProxyManager\Configuration();
