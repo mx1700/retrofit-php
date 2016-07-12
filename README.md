@@ -34,3 +34,7 @@ $user = $service->getUser('mx1700');
 
 License
 =======
+
+
+
+[retrofit]: https://github.com/square/retrofit
