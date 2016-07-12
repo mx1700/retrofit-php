@@ -9,7 +9,7 @@
     "require": {
         "doctrine/annotations": "^1.2",
         "doctrine/cache": "^1.6",
-        "ocramius/proxy-manager": "^2.0",
+        "ocramius/proxy-manager": "^1.0",
         "php-curl-class/php-curl-class": "^4.11"
     },
     "autoload":{
