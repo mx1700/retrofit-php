@@ -18,14 +18,14 @@ interface GithubService
 }
 ```
 
-只需使用 注解 定义API的配置信息，然后通过 ServiceFactory 类生成接口的实现类
+API的配置信息是通过 注解 来定义的（如上的 Get 注解），然后通过 ServiceFactory 类自动生成接口的实现
 
 ```php
 $factory = new ServiceFactory([ 'baseUrl' => 'https://api.github.com' ]);
 $service = $factory->create(GithubService::class);
 ```
 
-使用生成的 service 对象就可以调用 http api 并返回结果
+使用生成的 service 对象就可以调用 HTTP api 并返回结果
 
 ```php
 $user = $service->getUser('mx1700');
